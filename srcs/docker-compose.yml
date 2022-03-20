@@ -1,0 +1,63 @@
+version: '3.9'
+services:
+  mariadb:
+    container_name: mariadb
+    build: ./requirements/mariadb
+    volumes:
+      - db:/var/lib/mysql
+    env_file:
+      - .env
+    networks:
+      - cquiana-net
+    restart: always
+    ports:
+      - "3306:3306"
+  wordpress:
+    container_name: wordpress
+    build: ./requirements/wordpress
+    volumes:
+      - wp:/var/www/html
+    depends_on:
+      - mariadb
+    env_file:
+      - .env
+    restart: always
+    networks:
+      - cquiana-net
+    ports:
+      - "9000:9000"
+    command: "/usr/sbin/php-fpm7.3 -F -R"
+  nginx:
+    container_name: nginx
+    build: ./requirements/nginx
+    volumes:
+      - wp:/var/www/html
+    depends_on:
+      - wordpress
+    env_file:
+      - .env
+    restart: always
+    networks:
+      - cquiana-net
+    ports:
+      - "443:443"
+      - "80:80"
+
+volumes:
+  db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/${USER}/data/mariadb
+  wp:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/${USER}/data/html
+
+networks:
+  cquiana-net:
+    driver: bridge
+
